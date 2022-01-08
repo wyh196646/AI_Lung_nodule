@@ -1,3 +1,4 @@
 *.dcm
 *.pth
 *.nii
+*.gz

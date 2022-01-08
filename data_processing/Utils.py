@@ -15,6 +15,16 @@ import math
 import functools
 from functools import partial
 import pydicom
+import json
+
+def detect_dcm_or_nii(patient_path):
+    dir=Path(patient_path).parent[0]
+    temp=map(lambda x:x.suffix,dir.iterdir())
+    if 'dcm' in temp:
+        return 'dcm'
+    else:
+        return 'nii'
+
 
 
 def get_file(root_path,all_files=[]):
@@ -26,32 +36,58 @@ def get_file(root_path,all_files=[]):
         if not os.path.isdir(root_path + '/' + file):   # not a dir
             all_files.append(root_path + '/' + file)
         else:  # is a dir
-            get_file((root_path+'/'+file),all_files)
+            get_file((root_path+'/'+file),all_files)#这里应该是有一个小小的技巧，就是Python传递参数用元组和字典，就可以划分开
+            #positional argument 和 keyword argument
     return all_files
 
-def scan_base_folder(root_path,all_files=[]):
 
-    files = os.listdir(root_path)
-    for file in files:
-        temp_path = root_path + '/' + file
-        # if not have_subfolder(temp_path):
-        if not have_subfolder(temp_path) and Path:
-            all_files.append(temp_path)
-        else:
-            get_file((temp_path),all_files)  
+# def extract_labeled_from_dcm_or_nii(mask_path,img_type,label_type):
+#     '''
+#     本函数默认只支持dcm和nii格式的数据
+#     输入的是mask的路径，默认mask和影像数据在同一个文件夹下
+#     根据文件夹内部的序列进行匹配
+#     '''
+#     img_path=Path(mask_path).parents[0]
+
+#     if img_type=='dcm':
+#         series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(img_path)
+#         #nb_series = len(series_IDs)
+#     else:
 
 
-    return all_files
 
-def have_subfolder(path):#判断是否有子文件夹
-    '''
-    这里有一定的假设前提，就是说，这个文件夹下完全没有子目录
-    才返回True
-    '''
-    for x in os.listdir(path):
-        if  os.path.isdir(path+'/'+x):
-            return True
-    return False
+
+#     input_path=Path(mask_path).parents[0]
+
+#     if img_type=='dcm':
+#         data_info={}
+#         mask_files_path=glob.glob(os.path.join(input_path,'*.nii'))
+#         mask_file=[sitk.ReadImage(i) for i in mask_files_path]
+#         series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(input_path)
+#         nb_series = len(series_IDs)
+#         # 通过ID获取该ID对应的序列所有切片的完整路径， series_IDs[0]代表的是第一个序列的ID
+#         # 如果不添加series_IDs[0]这个参数，则默认获取第一个序列的所有切片路径
+#         for i in range(len(mask_file)):
+#             for j in range(nb_series):#
+#                 series_file_names = sitk.ImageSeriesReader.GetGDCMSeriesFileNames(input_path, series_IDs[j])#series_file_names是一个元组，存储了匹配的文件序列
+#                 #print(type(series_file_names))
+#                 series_reader = sitk.ImageSeriesReader()
+#                 series_reader.SetFileNames(series_file_names)
+#                 # 获取该序列对应的3D图像
+#                 image3D = series_reader.Execute()
+#                 if image3D.GetSize()==mask_file[i].GetSize():
+#                     data_info[mask_files_path[i]]=series_file_names
+#     else:
+#         img_list=input_path.iterdir()
+
+#         itk_img = sitk.ReadImage('./nifti.nii.gz')
+#         img = sitk.GetArrayFromImage(itk_img)
+
+    
+    data = json.dumps(data_info)
+    f2 = open('new_json.json', 'w')
+    f2.write(data)
+    f2.close()                
 
 
 def load_scan(filelist):
@@ -112,3 +148,12 @@ def static_suffix(res=[]):
         if Path(i).suffix not in suffix_list:
             suffix_list.append(Path(i).suffix)
     return suffix_list
+
+
+def detect_dcm_or_nii(patient_path):
+    dir=Path(patient_path).parents[0]
+    temp=list(map(lambda x:x.suffix,dir.iterdir()))
+    if '.dcm' in temp:
+        return 'dcm'
+    else:
+        return 'nii'

@@ -1,28 +1,28 @@
 <mxfile host="65bd71144e">
     <diagram id="prE8IJMuCMYUdnyknPm7" name="第 1 页">
-        <mxGraphModel dx="895" dy="619" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="871" dy="518" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="9" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="2" target="5">
+                <mxCell id="9" value="" style="edgeStyle=none;html=1;" parent="1" source="2" target="5" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="2" value="扫盘程序，提取有标注的文件夹，没有标注的直接跳过，有标注的，以pandas为基础，存储影像文件的后缀名（dcm/nii),以及标注文件的具体地址" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-                    <mxGeometry x="70" y="110" width="170" height="130" as="geometry"/>
+                <mxCell id="2" value="扫盘程序，提取有标注的文件夹，没有标注的直接跳过，有标注的，以pandas为基础，存储了影像文件名，以带mask的nii.gz为存储格式," style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="110" width="170" height="130" as="geometry"/>
                 </mxCell>
-                <mxCell id="8" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="5" target="7">
+                <mxCell id="8" value="" style="edgeStyle=none;html=1;" parent="1" source="5" target="7" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="5" value="根据扫盘程序的结果，以文件夹为单位，进行差异化匹配，结果以mask-dcm（series）键值对为存储单位，json存储" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                <mxCell id="5" value="根据扫盘程序的结果，以文件夹为单位，进行差异化匹配，结果以mask-dcm（series）键值对为存储单位，json存储" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="320" y="130" width="164" height="90" as="geometry"/>
                 </mxCell>
-                <mxCell id="11" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="7" target="10">
+                <mxCell id="11" value="" style="edgeStyle=none;html=1;" parent="1" source="7" target="10" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="7" value="根据键值对进行匹配，这个时候就和kaggle对接上了，hu值，重采样等代码，尽可能避免自己造轮子" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+                <mxCell id="7" value="根据键值对进行匹配，这个时候就和kaggle对接上了，hu值，重采样等代码，尽可能避免自己造轮子" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
                     <mxGeometry x="600" y="137.5" width="144" height="75" as="geometry"/>
                 </mxCell>
-                <mxCell id="10" value="" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+                <mxCell id="10" value="" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
                     <mxGeometry x="612" y="300" width="120" height="60" as="geometry"/>
                 </mxCell>
             </root>
