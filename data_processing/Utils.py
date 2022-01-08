@@ -29,6 +29,31 @@ def get_file(root_path,all_files=[]):
             get_file((root_path+'/'+file),all_files)
     return all_files
 
+def scan_base_folder(root_path,all_files=[]):
+
+    files = os.listdir(root_path)
+    for file in files:
+        temp_path = root_path + '/' + file
+        # if not have_subfolder(temp_path):
+        if not have_subfolder(temp_path) and Path:
+            all_files.append(temp_path)
+        else:
+            get_file((temp_path),all_files)  
+
+
+    return all_files
+
+def have_subfolder(path):#判断是否有子文件夹
+    '''
+    这里有一定的假设前提，就是说，这个文件夹下完全没有子目录
+    才返回True
+    '''
+    for x in os.listdir(path):
+        if  os.path.isdir(path+'/'+x):
+            return True
+    return False
+
+
 def load_scan(filelist):
     #slices = [dicom.read_file(path + '/' + s) for s in os.listdir(path)]
     slices = [pydicom.dcmread(s) for s in filelist]
@@ -73,3 +98,17 @@ def get_pixels_hu(slices):
         image[slice_number] += np.int16(intercept)
     
     return np.array(image, dtype=np.int16)
+
+
+def read_and_convert_nii_to_array(nii_path):
+    img = sitk.ReadImage(nii_path)
+    img_array = sitk.GetArrayFromImage(img)
+    return img_array
+
+
+def static_suffix(res=[]):
+    suffix_list=[]#用来统计suffix
+    for i in res:
+        if Path(i).suffix not in suffix_list:
+            suffix_list.append(Path(i).suffix)
+    return suffix_list

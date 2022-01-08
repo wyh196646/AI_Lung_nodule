@@ -1,0 +1,5 @@
+[Basic Info]
+PatientID=0017555074
+Modality=SR
+ReceiveNumber=87
+State=Receiving

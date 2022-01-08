@@ -1,0 +1,5 @@
+[Basic Info]
+PatientID=0017552352
+Modality=CT
+ReceiveNumber=742
+State=Receiving

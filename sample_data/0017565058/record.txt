@@ -1,0 +1,5 @@
+[Basic Info]
+PatientID=0017565058
+Modality=SR
+ReceiveNumber=610
+State=Receiving
