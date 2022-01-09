@@ -21,7 +21,21 @@ from skimage import measure, morphology
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 
+def convert_series_to_list(series):
+    '''
+    将一个Series对象转换成list
+    '''
+    return series.values.tolist()
 
+
+def convert_dataframe_to_serveral_list(data):
+    '''
+    外面的变量数必须对得上列的数量才行
+    '''
+    temp=[]
+    for x in data.columns:
+        temp.append(data[x].values.tolist())
+    return temp
 
 def detect_dcm_or_nii(patient_path):
     dir=Path(patient_path).parent[0]
@@ -47,53 +61,55 @@ def get_file(root_path,all_files=[]):
     return all_files
 
 
-# def extract_labeled_from_dcm_or_nii(mask_path,img_type,label_type):
-#     '''
-#     本函数默认只支持dcm和nii格式的数据
-#     输入的是mask的路径，默认mask和影像数据在同一个文件夹下
-#     根据文件夹内部的序列进行匹配
-#     '''
-#     img_path=Path(mask_path).parents[0]
+def extract_labeled_from_dcm_or_nii(mask_path,img_type,label_type):
+    '''
+    本函数默认只支持dcm和nii格式的数据
+    输入的是mask的路径，默认mask和影像数据在同一个文件夹下
+    根据文件夹内部的序列进行匹配
+    '''
+    img_path=Path(mask_path).parents[0]
 
-#     if img_type=='dcm':
-#         series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(img_path)
-#         #nb_series = len(series_IDs)
-#     else:
+    if img_type=='dcm':
+        series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(img_path)
+        #nb_series = len(series_IDs)
+    else:
+        print(3)
 
 
 
+    input_path=Path(mask_path).parents[0]
 
-#     input_path=Path(mask_path).parents[0]
+    if img_type=='dcm':
+        data_info={}
+        mask_files_path=glob.glob(os.path.join(input_path,'*.nii'))
+        mask_file=[sitk.ReadImage(i) for i in mask_files_path]
+        series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(input_path)
+        nb_series = len(series_IDs)
+        # 通过ID获取该ID对应的序列所有切片的完整路径， series_IDs[0]代表的是第一个序列的ID
+        # 如果不添加series_IDs[0]这个参数，则默认获取第一个序列的所有切片路径
+        for i in range(len(mask_file)):
+            for j in range(nb_series):#
+                series_file_names = sitk.ImageSeriesReader.GetGDCMSeriesFileNames(input_path, series_IDs[j])#series_file_names是一个元组，存储了匹配的文件序列
+                #print(type(series_file_names))
+                series_reader = sitk.ImageSeriesReader()
+                series_reader.SetFileNames(series_file_names)
+                # 获取该序列对应的3D图像
+                image3D = series_reader.Execute()
+                if image3D.GetSize()==mask_file[i].GetSize():
+                    data_info[mask_files_path[i]]=series_file_names
+    else:
+        img_list=input_path.iterdir()
 
-#     if img_type=='dcm':
-#         data_info={}
-#         mask_files_path=glob.glob(os.path.join(input_path,'*.nii'))
-#         mask_file=[sitk.ReadImage(i) for i in mask_files_path]
-#         series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(input_path)
-#         nb_series = len(series_IDs)
-#         # 通过ID获取该ID对应的序列所有切片的完整路径， series_IDs[0]代表的是第一个序列的ID
-#         # 如果不添加series_IDs[0]这个参数，则默认获取第一个序列的所有切片路径
-#         for i in range(len(mask_file)):
-#             for j in range(nb_series):#
-#                 series_file_names = sitk.ImageSeriesReader.GetGDCMSeriesFileNames(input_path, series_IDs[j])#series_file_names是一个元组，存储了匹配的文件序列
-#                 #print(type(series_file_names))
-#                 series_reader = sitk.ImageSeriesReader()
-#                 series_reader.SetFileNames(series_file_names)
-#                 # 获取该序列对应的3D图像
-#                 image3D = series_reader.Execute()
-#                 if image3D.GetSize()==mask_file[i].GetSize():
-#                     data_info[mask_files_path[i]]=series_file_names
-#     else:
-#         img_list=input_path.iterdir()
-
-#         itk_img = sitk.ReadImage('./nifti.nii.gz')
-#         img = sitk.GetArrayFromImage(itk_img)
+        itk_img = sitk.ReadImage('./nifti.nii.gz')
+        img = sitk.GetArrayFromImage(itk_img)
 
     
-#     data = json.dumps(data_info)
-#     f2 = open('new_json.json', 'w')
-#     f2.write(data)
-#     f2.close()                
+    data = json.dumps(data_info)
+    f2 = open('new_json.json', 'w')
+    f2.write(data)
+    f2.close()                
+
+
 
 def resample(image, scan, new_spacing=[1,1,1]):
     # Determine current pixel spacing
@@ -187,9 +203,7 @@ def segment_lung_mask(image, fill_lung_structures=True):
 
 def load_scan(filelist):#
     '''
-    我们有可能根本不需要这一步
-    就可以得到垂直方向的间距，但其实这么用也不是不可以，尽量适配公开数据集
-    的接口就可以
+
     '''
     #slices = [dicom.read_file(path + '/' + s) for s in os.listdir(path)]
     slices = [pydicom.dcmread(s) for s in filelist]
@@ -264,3 +278,6 @@ def detect_dcm_or_nii(patient_path):
         return 'dcm'
     else:
         return 'nii'
+
+
+def visual_nii()

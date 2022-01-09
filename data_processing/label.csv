@@ -1,4 +1,4 @@
- mask_path,img_type,label_type
+mask_path,img_type,label_type
 /data/wyh_data/影像数据EGFR1第二部分/Marked/POSITIVE/resistant+non-sensitizing/0007131998/Mask_2.nii.gz,dcm,gz
 /data/wyh_data/影像数据EGFR1第二部分/Marked/POSITIVE/resistant+non-sensitizing/0007725388/Mask_7.nii.gz,dcm,gz
 /data/wyh_data/影像数据EGFR1第二部分/Marked/POSITIVE/resistant+non-sensitizing/0007725388/Mask_5.nii.gz,dcm,gz

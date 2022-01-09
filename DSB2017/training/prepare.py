@@ -99,8 +99,7 @@ def savenpy(id,annos,filelist,data_path,prep_folder):
     label = label[:,[3,1,2,4]].astype('float')
     
     im, m1, m2, spacing = step1_python(os.path.join(data_path,name))
-    Mask = m1+m2
-    
+    Mask = m1+m2#上面是进行掩膜分割，已经基本调通了，这边的代码尽量不要动，方便在另一边修改接口
     newshape = np.round(np.array(Mask.shape)*spacing/resolution)
     xx,yy,zz= np.where(Mask)
     box = np.array([[np.min(xx),np.max(xx)],[np.min(yy),np.max(yy)],[np.min(zz),np.max(zz)]])
@@ -142,7 +141,7 @@ def savenpy(id,annos,filelist,data_path,prep_folder):
     else:
         haslabel = 1
         label2 = np.copy(label).T
-        label2[:3] = label2[:3][[0,2,1]]
+        label2[:3] = label2[:3][[0,2,1]]#这里应该是交换 x y z坐标
         label2[:3] = label2[:3]*np.expand_dims(spacing,1)/np.expand_dims(resolution,1)
         label2[3] = label2[3]*spacing[1]/resolution[1]
         label2[:3] = label2[:3]-np.expand_dims(extendbox[:,0],1)

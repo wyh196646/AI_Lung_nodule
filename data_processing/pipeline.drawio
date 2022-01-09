@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="prE8IJMuCMYUdnyknPm7" name="第 1 页">
-        <mxGraphModel dx="871" dy="518" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="1066" dy="646" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -13,17 +13,20 @@
                 <mxCell id="8" value="" style="edgeStyle=none;html=1;" parent="1" source="5" target="7" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="5" value="根据扫盘程序的结果，以文件夹为单位，进行差异化匹配，结果以mask-dcm（series）键值对为存储单位，json存储" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="320" y="130" width="164" height="90" as="geometry"/>
+                <mxCell id="5" value="根据扫盘程序的结果，以文件夹为单位，进行差异化匹配，结果以mask-dcm（series）键值对为存储单位，json存储（这里最好进行的一步就是&amp;nbsp; 将nii影像转成dcm，不然就得在后面写接口）" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="316" y="120" width="164" height="120" as="geometry"/>
                 </mxCell>
-                <mxCell id="11" value="" style="edgeStyle=none;html=1;" parent="1" source="7" target="10" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                <mxCell id="7" value="按照键值对读取 mask - dcm序列，以pandas为指导格式，以mask的路径（修改前面为outptpath）为makedir的参数，创建hu值转换，mask，归一化等一系列的操作后的数组，以npy或者npz为存储单位，存储影像数据，同时存储 分割点云标签，3D目标检测的标签，csn文件应该有三列，影像路径，segmatation_label_path,object_detection_label_path&lt;br&gt;这个应该就是最终的指导性csv，病症什么的可以后续再添加&lt;br&gt;" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="110" width="340" height="140" as="geometry"/>
                 </mxCell>
-                <mxCell id="7" value="根据键值对进行匹配，这个时候就和kaggle对接上了，hu值，重采样等代码，尽可能避免自己造轮子" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
-                    <mxGeometry x="600" y="137.5" width="144" height="75" as="geometry"/>
+                <mxCell id="15" value="多结节的处置方式：前面的csv文件是以一个mask为键的，所以，mask中如果有多个结界的话，对应存储label的npz文件也应该是多维的，对于检测，要分清 xyz 轴及顺序，对于分割的点云数据，可以用元组构成的多维数组存储，分割的数据点重采样需要继续调研，或许就是一起重采样，再取点存储&lt;br&gt;" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="270" y="360" width="270" height="190" as="geometry"/>
                 </mxCell>
-                <mxCell id="10" value="" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
-                    <mxGeometry x="612" y="300" width="120" height="60" as="geometry"/>
+                <mxCell id="16" value="" style="shape=flexArrow;endArrow=classic;startArrow=classic;html=1;" edge="1" parent="1">
+                    <mxGeometry width="100" height="100" relative="1" as="geometry">
+                        <mxPoint x="510" y="360" as="sourcePoint"/>
+                        <mxPoint x="610" y="260" as="targetPoint"/>
+                    </mxGeometry>
                 </mxCell>
             </root>
         </mxGraphModel>

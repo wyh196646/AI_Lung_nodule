@@ -4,13 +4,13 @@ import dicom
 import os
 import scipy.ndimage
 import matplotlib.pyplot as plt
-
+import json
 from skimage import measure, morphology
+import pydicom
 
 
-
-def load_scan(path):
-    slices = [dicom.read_file(path + '/' + s) for s in os.listdir(path)]
+def load_scan(filelist):
+    slices = [pydicom.dcmread(s) for s in filelist]
     slices.sort(key = lambda x: float(x.ImagePositionPatient[2]))
     if slices[0].ImagePositionPatient[2] == slices[1].ImagePositionPatient[2]:
         sec_num = 2
@@ -47,7 +47,9 @@ def get_pixels_hu(slices):
             
         image[slice_number] += np.int16(intercept)
     
-    return np.array(image, dtype=np.int16), np.array([slices[0].SliceThickness] + slices[0].PixelSpacing, dtype=np.float32)
+    return np.array(image, dtype=np.int16), np.array([slices[0].SliceThickness,
+ slices[0].PixelSpacing[0], slices[0].PixelSpacing[1]], dtype=np.float32)
+
 
 def binarize_per_slice(image, spacing, intensity_th=-600, sigma=1, area_th=30, eccen_th=0.99, bg_patch_size=10):
     bw = np.zeros(image.shape, dtype=bool)
@@ -225,8 +227,8 @@ def two_lung_only(bw, spacing, max_iter=22, max_ratio=4.8):
 
     return bw1, bw2, bw
 
-def step1_python(case_path):
-    case = load_scan(case_path)
+def step1_python(file_list):
+    case = load_scan(file_list)
     case_pixels, spacing = get_pixels_hu(case)
     bw = binarize_per_slice(case_pixels, spacing)
     flag = 0
@@ -243,10 +245,16 @@ def step1_python(case_path):
     return case_pixels, bw1, bw2, spacing
     
 if __name__ == '__main__':
-    INPUT_FOLDER = '/work/DataBowl3/stage1/stage1/'
-    patients = os.listdir(INPUT_FOLDER)
-    patients.sort()
-    case_pixels, m1, m2, spacing = step1_python(os.path.join(INPUT_FOLDER,patients[25]))
+    # INPUT_FOLDER = '/work/DataBowl3/stage1/stage1/'
+    # patients = os.listdir(INPUT_FOLDER)
+    # patients.sort()
+    # case_pixels, m1, m2, spacing = step1_python(os.path.join(INPUT_FOLDER,patients[25]))
+    file_path='/home/wyh21/AI_Lung_node/data_processing/new_json.json'
+    with open(file_path,'r') as load_f:
+        load_dict = json.load(load_f)
+    mask_file,series_file_names=list(load_dict.items())[0]
+    case_pixels, m1, m2, spacing = step1_python(list(series_file_names))
     plt.imshow(m1[60])
     plt.figure()
     plt.imshow(m2[60])
+    plt.show()
