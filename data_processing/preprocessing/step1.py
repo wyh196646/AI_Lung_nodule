@@ -7,9 +7,10 @@ import matplotlib.pyplot as plt
 import json
 from skimage import measure, morphology
 import pydicom
+import SimpleITK as sitk
 
 
-def load_scan(filelist):
+def load_scan(filelist):#只是一个加载slice的函数，不用想的太复杂
     slices = [pydicom.dcmread(s) for s in filelist]
     slices.sort(key = lambda x: float(x.ImagePositionPatient[2]))
     if slices[0].ImagePositionPatient[2] == slices[1].ImagePositionPatient[2]:
@@ -227,8 +228,12 @@ def two_lung_only(bw, spacing, max_iter=22, max_ratio=4.8):
 
     return bw1, bw2, bw
 
-def step1_python(file_list):
-    case = load_scan(file_list)
+def step1_python(file):
+    if len(file)>1:
+        case = load_scan(file)
+    else:
+        case=sitk.ReadImage(file)
+
     case_pixels, spacing = get_pixels_hu(case)
     bw = binarize_per_slice(case_pixels, spacing)
     flag = 0
