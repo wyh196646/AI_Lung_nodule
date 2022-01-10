@@ -279,5 +279,20 @@ def detect_dcm_or_nii(patient_path):
     else:
         return 'nii'
 
+def chunk(list, n):
+    result = []
+    for i in range(n):
+        result.append(list[math.floor(i / n * len(list)):math.floor((i + 1) / n * len(list))])
+    return result
+       
+def run_multi_process(item_list, n_proc, func, with_proc_num=False):
+    tasks = chunk(item_list, n_proc)
+    if with_proc_num:
+        for i in range(len(tasks)):
+            tasks[i] = (i, tasks[i])
+    with multiprocessing.Pool(processes=n_proc) as pool:
+        results = pool.map(func, tasks)
+    return results
 
-def visual_nii()
+def visual_nii():
+    pass
