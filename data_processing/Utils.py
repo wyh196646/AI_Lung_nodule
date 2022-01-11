@@ -72,53 +72,73 @@ def get_file(root_path,all_files=[]):
     return all_files
 
 
-def extract_labeled_from_dcm_or_nii(mask_path,img_type,label_type):
+def extract_labeled_from_dcm_or_nii(compose_info:tuple):
+    mask_path,img_type,label_type=compose_info
     '''
     本函数默认只支持dcm和nii格式的数据
     输入的是mask的路径，默认mask和影像数据在同一个文件夹下
     根据文件夹内部的序列进行匹配
     '''
-    img_path=Path(mask_path).parents[0]
-
-    if img_type=='dcm':
-        series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(img_path)
-        #nb_series = len(series_IDs)
-    else:
-        print(3)
-
-
-
+    #label不管是啥样的，都是一样的读法，不用区分
     input_path=Path(mask_path).parents[0]
-
-    if img_type=='dcm':
-        data_info={}
-        mask_files_path=glob.glob(os.path.join(input_path,'*.nii'))
-        mask_file=[sitk.ReadImage(i) for i in mask_files_path]
-        series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(input_path)
-        nb_series = len(series_IDs)
-        # 通过ID获取该ID对应的序列所有切片的完整路径， series_IDs[0]代表的是第一个序列的ID
-        # 如果不添加series_IDs[0]这个参数，则默认获取第一个序列的所有切片路径
-        for i in range(len(mask_file)):
-            for j in range(nb_series):#
-                series_file_names = sitk.ImageSeriesReader.GetGDCMSeriesFileNames(input_path, series_IDs[j])#series_file_names是一个元组，存储了匹配的文件序列
-                #print(type(series_file_names))
-                series_reader = sitk.ImageSeriesReader()
-                series_reader.SetFileNames(series_file_names)
-                # 获取该序列对应的3D图像
-                image3D = series_reader.Execute()
-                if image3D.GetSize()==mask_file[i].GetSize():
-                    data_info[mask_files_path[i]]=series_file_names
+    try:
+        mask_file=sitk.ReadImage(mask_path)
+    except:
+        return {'unvalid':mask_path}#为了后面过滤掉无效的数据的一种取巧操作，不得已而为之
+        #return 
     else:
-        img_list=input_path.iterdir()
 
-        itk_img = sitk.ReadImage('./nifti.nii.gz')
-        img = sitk.GetArrayFromImage(itk_img)
+        data_info={}
+        #根据单元测试，必须对label最后一个维度消融掉，之前那个怎么匹配得上的，是有问题的
 
+
+        if img_type=='dcm':
+            series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(str(input_path))
+            for i in range(len(series_IDs)):
+                    series_file_names = sitk.ImageSeriesReader.GetGDCMSeriesFileNames(str(input_path), series_IDs[i])#series_file_names是一个元组，存储了匹配的文件序列
+            #print(type(series_file_names))
+                    if series_file_names:
+                        series_reader = sitk.ImageSeriesReader()
+                        series_reader.SetFileNames(series_file_names)
+                        # 获取该序列对应的3D图像
+                        try:
+                            image3D = series_reader.Execute()#有一些空头文件必须处理掉
+                        except:
+                            return  {'unvalid':mask_path}
+                            #return 
+                        else:
+                            if image3D.GetSize()==mask_file.GetSize()[0:3]:
+                                data_info[mask_path]=series_file_names
+                                break
+            #nb_series = len(series_IDs)
+        else:
+            files_path=glob.glob(os.path.join(input_path,'*.nii.gz'))
+            image_path=list(filter(lambda x:'Mask' not in x,files_path))#过滤掉标签信息
+            for i in image_path:
+                image_3D=sitk.ReadImage(str(i))
+                if image_3D.GetSize()==mask_file.GetSize()[0:3]:
+                    data_info[mask_path]=[i]
+                    break
+        return data_info
+          
+          
+
+#mask匹配结节部分差不多了，接下来就是看cube
+# mask_path,img_type,label_type=convert_dataframe_to_serveral_list(mask_key)
+# compose_info=list(zip(mask_path,img_type,label_type))
+# res=[]
+# with Pool(150) as p:
+#     res=p.map(extract_labeled_from_dcm_or_nii,compose_info)
+
+# save={}
+# for i in res:
+#     save.update(i)
     
-    data = json.dumps(data_info)
-    f2 = open('new_json.json', 'w')
-    f2.write(data)
-    f2.close()                
+# save.pop('unvalid')
+# data = json.dumps(save)
+# f2 = open('new_json.json', 'w')
+# f2.write(data)
+# f2.close()      
 
 
 

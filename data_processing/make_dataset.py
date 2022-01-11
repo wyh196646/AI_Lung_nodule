@@ -69,56 +69,7 @@ def save_np_array(array,path):#将文件上一级目录下的文件夹创建，�
     
 
 
-def make_dataset(DirectoryPath:Path,slice_path_list,mask_path_list,ratio=1.5):
-    '''
 
-    '''
-
-    nodule_path=Path(DirectoryPath/"nodule")
-    context_nodule_path=Path(DirectoryPath/"context_nodule")
-    position_path=Path(DirectoryPath/'point_cloud')
-    detection_path=Path(DirectoryPath/'detection')
-
-
-
-    for index in range(len(slice_path_list)):
-        img_nii = sitk.ReadImage(slice_path_list[index])
-        img_array = sitk.GetArrayFromImage(img_nii)
-
-        mask_nii = sitk.ReadImage(mask_path_list[index])
-        mask_array = sitk.GetArrayFromImage(mask_nii)
-
-        res=np.where(mask_array==1)#返回的是 x y z 轴,x y z 分别对应不同的轴方向，未必是原来那样的
-        valid_z_pathes=list(dict(Counter(res[0])).keys())
-        nodule_start=classify_nodule_and_relabel(valid_z_pathes,img_array,mask_array)
-
-        for i in range(1,nodule_start+1):
-            zlist, ylist, xlist = np.where(mask_array==i)
-            position=np.argwhere(mask_array==1)    
-            position=position/np.array(mask_array.shape)[:,None].T#用来对点云坐标数据进行归一化
-            #就不存储类别了，因为所有的点云的类别都是肺结节
-            position_path=nodule_path/f"position{index}_{i}.npy"
-            save_np_array(position,position_path)#保存点云坐标
-
-            xmin,xmax,ymin,ymax,zmin,zmax= xlist[0],xlist[-1],ylist[0],ylist[-1],zlist[0],zlist[-1]
-            detection_label=np.array([xmin,xmax,ymin,ymax,zmin,zmax])
-            detection_path=detection_path/f"detection{index}_{i}.npy"
-            save_np_array(detection_label,detection_path)#保存检测坐标
-            
-            cropped_nodule = img_array[zmin:zmax+1, ymin:ymax+1, xmin:xmax+1]
-            (context_xmin,context_xmax),(context_ymin,context_ymax),(context_zmin,context_zmax)=get_context_nodule_coordinate(xmin,xmax,ymin,ymax,zmin,zmax,ratio)
-            cropped_nodule1 = img_array[context_zmin:context_zmax,context_ymin:context_ymax+1,context_xmin:context_xmax+1]
-
-            # todo 3D展示结节
-            # todo 存储结节（存储为.nii)
-            #print('first saved')
-            cropped_nodule_path =nodule_path/ f"nodule{index}_{i}.nii" 
-            nodule_img = sitk.GetImageFromArray(cropped_nodule)
-            sitk.WriteImage(nodule_img, cropped_nodule_path)
-
-            cropped_nodule_path = context_nodule_path/f"nodule{index}_{i}.nii" 
-            nodule_img = sitk.GetImageFromArray(cropped_nodule1)
-            sitk.WriteImage(nodule_img, cropped_nodule_path)
 
 
 def resample(imgs, spacing, new_spacing,order=2):
@@ -218,7 +169,7 @@ def make_dataset(id,label_list=[],image_list=[],prep_folder=''):
     bone_thresh = 210
     pad_value = 170
     im[np.isnan(im)]=-2000
-    sliceim = lumTrans(im)
+    sliceim = lumTrans(im)#分割任务的标签
     sliceim = sliceim*dilatedMask+pad_value*(1-dilatedMask).astype('uint8')
     bones = sliceim*extramask>bone_thresh
     sliceim[bones] = pad_value
@@ -227,18 +178,21 @@ def make_dataset(id,label_list=[],image_list=[],prep_folder=''):
                 extendbox[1,0]:extendbox[1,1],
                 extendbox[2,0]:extendbox[2,1]]
     sliceim = sliceim2[np.newaxis,...]
-    np.save(path/'_clean.npy',sliceim)
+    np.save(path/'image_clean.npy',sliceim)
 
     label_resample=resample(label,spacing,resolution,order=0)
-    np.save(path/'_label.npy',label_resample)#重采样以后的分割标签
+    np.save(path/'image_segamatation_label.npy',label_resample)#重采样以后的分割标签
 
     '''
-    接下来是切出cube和带边缘信息的cube
+    接下来是切出cube和带边缘信息的cube，EGFR分类任务的标签，我直接做切分以后的
 
     '''
 
 
 
+
+
+    #接下来是目标检测的标签
 
 
 
