@@ -23,8 +23,8 @@ from preprocessing.step1 import step1_python
 import warnings
 import json
 from Pathlib import Path
-
-
+from collections import Counter
+import collections
 from multiprocessing import Pool
 
 
@@ -67,8 +67,6 @@ def save_np_array(array,path):#将文件上一级目录下的文件夹创建，�
     path.parents[0].mkdir(parents=True, exist_ok=True)
     np.save(path,array)
     
-
-
 
 
 
@@ -180,8 +178,46 @@ def make_dataset(id,label_list=[],image_list=[],prep_folder=''):
     sliceim = sliceim2[np.newaxis,...]
     np.save(path/'image_clean.npy',sliceim)
 
-    label_resample=resample(label,spacing,resolution,order=0)
-    np.save(path/'image_segamatation_label.npy',label_resample)#重采样以后的分割标签
+    label_resample=resample(label,spacing,resolution,order=0) 
+    np.save(path/'image_volume_segamatation_label.npy',label_resample)#重采样以后的分割标签,按照volume体素级别的保存，并不按照单一的坐标
+
+
+
+    res=np.where(label_resample==1)#返回的是 x y z 轴,x y z 分别对应不同的轴方向，未必是原来那样的
+    valid_z_pathes=list(dict(Counter(res[0])).keys())
+    
+    nodule_start=classify_nodule_and_relabel(valid_z_pathes,sliceim,label_resample)
+
+    detection_points=[]
+
+    for i in range(1,nodule_start+1):
+
+        zlist, ylist, xlist = np.where(label_resample==i)
+        # position=np.argwhere(label_resample==1)    
+        # position=position/np.array(label_resample.shape)[:,None].T#用来对点云坐标数据进行归一化
+        # #就不存储类别了，因为所有的点云的类别都是肺结节
+        # position_path=path/f"position{index}_{i}.npy"
+        # save_np_array(position,position_path)#保存点云坐标，这里是应该是可以按照volume的体素坐标，直接npwhere得到的，应该是不用单独保存
+
+
+        xmin,xmax,ymin,ymax,zmin,zmax= xlist[0],xlist[-1],ylist[0],ylist[-1],zlist[0],zlist[-1]
+        detection_label=np.array([xmin,xmax,ymin,ymax,zmin,zmax])
+        detection_path=detection_path/f"detection—_{i}.npy"
+        save_np_array(detection_label,detection_path)#
+        
+        cropped_nodule = sliceim[zmin:zmax+1, ymin:ymax+1, xmin:xmax+1]
+        (context_xmin,context_xmax),(context_ymin,context_ymax),(context_zmin,context_zmax)=get_context_nodule_coordinate(xmin,xmax,ymin,ymax,zmin,zmax,ratio)
+        cropped_context_nodule = sliceim[context_zmin:context_zmax,context_ymin:context_ymax+1,context_xmin:context_xmax+1]
+        
+        detection_points.append([xmin,xmax,ymin,ymax,zmin,zmax])
+        # todo 3D展示结节
+        # todo 存储结节（存储为.nii)
+        #print('first saved')
+        np.save(path/ f"nodule_{i}.nii", cropped_nodule)
+
+        np.save(path/f"context_nodule_{i}.nii", cropped_context_nodule)
+    np.save(path/f"detection.npy",detection_points)
+
 
     '''
     接下来是切出cube和带边缘信息的cube，EGFR分类任务的标签，我直接做切分以后的
@@ -199,7 +235,7 @@ def make_dataset(id,label_list=[],image_list=[],prep_folder=''):
 
 def full_prep(label_list,image_list,output_folder,nproc=150):
     pool = Pool(nproc)
-    partial_savenpy = partial(savenpy,label_list=label_list,image_list=image_list,prep_folder=output_folder)
+    partial_savenpy = partial(make_dataset,label_list=label_list,image_list=image_list,prep_folder=output_folder)
     N = len(label_list)
         #savenpy(1)
     _=pool.map(partial_savenpy,range(N))
