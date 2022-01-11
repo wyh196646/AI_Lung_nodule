@@ -20,10 +20,14 @@ import scipy
 from skimage import measure, morphology
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import matplotlib.pyplot as plt
+import collections
 
 from ipywidgets import interact, interactive
 from ipywidgets import widgets
 
+def count_values(data:np.array):
+    unique, counts =np.unique(data, return_counts=True)
+    return dict(zip(unique, counts))
 
 
 

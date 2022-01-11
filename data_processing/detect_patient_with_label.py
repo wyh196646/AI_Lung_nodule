@@ -62,7 +62,7 @@ def extract_labeled_from_dcm_or_nii(compose_info:tuple):
             for i in image_path:
                 image_3D=sitk.ReadImage(str(i))
                 if image_3D.GetSize()==mask_file.GetSize()[0:3]:
-                    data_info[mask_path]=[i]
+                    data_info[mask_path]=[i]#这里带不带方括号可能需要再看看
                     break
         return data_info
 
