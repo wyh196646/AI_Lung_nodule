@@ -22,7 +22,104 @@ from preprocessing.step1 import step1_python
 #from step1 import step1_python
 import warnings
 import json
+from Pathlib import Path
+
+
 from multiprocessing import Pool
+
+
+
+
+def read_and_convert_nii_to_array(nii_path):
+    img = sitk.ReadImage(nii_path)
+    img_array = sitk.GetArrayFromImage(img)
+    return img_array
+
+
+def get_context_nodule_coordinate(*params,ratio=1.5):#params一般是6个坐标
+    return [calculate_axis_coordinate(x,y) for x,y in zip(params[::2], params[1::2])]
+
+def calculate_axis_coordinate(a,b,ratio):
+    return (a+b+ratio*a-ratio*b)//2,(a+b+ratio*b-ratio*a)//2
+
+
+def classify_nodule_and_relabel(valid_z_pathes,img_array,mask_array):
+    '''
+    object as the fomal params,the origin num will be changed
+    '''
+    nodule_start=1
+    for i in range(1,len(valid_z_pathes)):
+        if valid_z_pathes[i]-valid_z_pathes[i-1]>1:
+            nodule_start+=1
+            mask_array[valid_z_pathes[i]][ mask_array[valid_z_pathes[i]]==1]=nodule_start
+        else:
+            if valid_z_pathes[i]-valid_z_pathes[i-1]==1:#这是层数挨着的patch
+                if np.isin(1,mask_array[valid_z_pathes[i]]==img_array[valid_z_pathes[i-1]]):#证明两个patch是一个结节的
+        
+                    mask_array[i][ mask_array[valid_z_pathes[i]]==1]=nodule_start
+                else:
+                    nodule_start+=1
+                    mask_array[valid_z_pathes[i]][mask_array[valid_z_pathes[i]]==1]=nodule_start
+    return i
+
+
+def save_np_array(array,path):#将文件上一级目录下的文件夹创建，然后保存文件夹
+    path.parents[0].mkdir(parents=True, exist_ok=True)
+    np.save(path,array)
+    
+
+
+def make_dataset(DirectoryPath:Path,slice_path_list,mask_path_list,ratio=1.5):
+    '''
+
+    '''
+
+    nodule_path=Path(DirectoryPath/"nodule")
+    context_nodule_path=Path(DirectoryPath/"context_nodule")
+    position_path=Path(DirectoryPath/'point_cloud')
+    detection_path=Path(DirectoryPath/'detection')
+
+
+
+    for index in range(len(slice_path_list)):
+        img_nii = sitk.ReadImage(slice_path_list[index])
+        img_array = sitk.GetArrayFromImage(img_nii)
+
+        mask_nii = sitk.ReadImage(mask_path_list[index])
+        mask_array = sitk.GetArrayFromImage(mask_nii)
+
+        res=np.where(mask_array==1)#返回的是 x y z 轴,x y z 分别对应不同的轴方向，未必是原来那样的
+        valid_z_pathes=list(dict(Counter(res[0])).keys())
+        nodule_start=classify_nodule_and_relabel(valid_z_pathes,img_array,mask_array)
+
+        for i in range(1,nodule_start+1):
+            zlist, ylist, xlist = np.where(mask_array==i)
+            position=np.argwhere(mask_array==1)    
+            position=position/np.array(mask_array.shape)[:,None].T#用来对点云坐标数据进行归一化
+            #就不存储类别了，因为所有的点云的类别都是肺结节
+            position_path=nodule_path/f"position{index}_{i}.npy"
+            save_np_array(position,position_path)#保存点云坐标
+
+            xmin,xmax,ymin,ymax,zmin,zmax= xlist[0],xlist[-1],ylist[0],ylist[-1],zlist[0],zlist[-1]
+            detection_label=np.array([xmin,xmax,ymin,ymax,zmin,zmax])
+            detection_path=detection_path/f"detection{index}_{i}.npy"
+            save_np_array(detection_label,detection_path)#保存检测坐标
+            
+            cropped_nodule = img_array[zmin:zmax+1, ymin:ymax+1, xmin:xmax+1]
+            (context_xmin,context_xmax),(context_ymin,context_ymax),(context_zmin,context_zmax)=get_context_nodule_coordinate(xmin,xmax,ymin,ymax,zmin,zmax,ratio)
+            cropped_nodule1 = img_array[context_zmin:context_zmax,context_ymin:context_ymax+1,context_xmin:context_xmax+1]
+
+            # todo 3D展示结节
+            # todo 存储结节（存储为.nii)
+            #print('first saved')
+            cropped_nodule_path =nodule_path/ f"nodule{index}_{i}.nii" 
+            nodule_img = sitk.GetImageFromArray(cropped_nodule)
+            sitk.WriteImage(nodule_img, cropped_nodule_path)
+
+            cropped_nodule_path = context_nodule_path/f"nodule{index}_{i}.nii" 
+            nodule_img = sitk.GetImageFromArray(cropped_nodule1)
+            sitk.WriteImage(nodule_img, cropped_nodule_path)
+
 
 def resample(imgs, spacing, new_spacing,order=2):
     if len(imgs.shape)==3:
@@ -94,18 +191,14 @@ def lumTrans(img):
     return newimg
 
 
-def savenpy(id,label_list,image_list,prep_folder):        
+def make_dataset(id,label_list=[],image_list=[],prep_folder=''):        
     resolution = np.array([1,1,1])
     image = image_list[id]
     label=label_list[id]
-    #label = annos[annos[:,0]==name]
-    #label = label[:,[3,1,2,4]].astype('float')
-    #应该是用相对路径更好一些,但是也没有办法了，这里已经搞成绝对路径了，后面再说吧，路径不太好弄
-    #这里
-    im, m1, m2, spacing = step1_python(img)
+    path=Path(prep_folder)/Path(label[15:]).parents[0]
+    path.mkdir(parents=True,exist_ok=True)
 
-
-
+    im, m1, m2, spacing = step1_python(image)
     Mask = m1+m2#上面是进行掩膜分割，已经基本调通了，这边的代码尽量不要动，方便在另一边修改接口
     newshape = np.round(np.array(Mask.shape)*spacing/resolution)
     xx,yy,zz= np.where(Mask)
@@ -134,31 +227,25 @@ def savenpy(id,label_list,image_list,prep_folder):
                 extendbox[1,0]:extendbox[1,1],
                 extendbox[2,0]:extendbox[2,1]]
     sliceim = sliceim2[np.newaxis,...]
-    np.save(os.path.join(prep_folder,name+'_clean.npy'),sliceim)
+    np.save(path/'_clean.npy',sliceim)
 
-    
-    # if len(label)==0:
-    #     label2 = np.array([[0,0,0,0]])
-    # elif len(label[0])==0:
-    #     label2 = np.array([[0,0,0,0]])
-    # elif label[0][0]==0:
-    #     label2 = np.array([[0,0,0,0]])
-    # else:
-    #     haslabel = 1
-    #     label2 = np.copy(label).T
-    #     label2[:3] = label2[:3][[0,2,1]]#这里应该是交换 x y z坐标
-    #     label2[:3] = label2[:3]*np.expand_dims(spacing,1)/np.expand_dims(resolution,1)
-    #     label2[3] = label2[3]*spacing[1]/resolution[1]
-    #     label2[:3] = label2[:3]-np.expand_dims(extendbox[:,0],1)
-    #     label2 = label2[:4].T
-    # np.save(os.path.join(prep_folder,name+'_label.npy'),label2)
+    label_resample=resample(label,spacing,resolution,order=0)
+    np.save(path/'_label.npy',label_resample)#重采样以后的分割标签
+
+    '''
+    接下来是切出cube和带边缘信息的cube
+
+    '''
+
+
+
 
 
 
 
 def full_prep(label_list,image_list,output_folder,nproc=150):
     pool = Pool(nproc)
-    partial_savenpy = partial(savenpy,label_list= label_list,file_list=image_list,prep_folder=output_folder)
+    partial_savenpy = partial(savenpy,label_list=label_list,image_list=image_list,prep_folder=output_folder)
     N = len(label_list)
         #savenpy(1)
     _=pool.map(partial_savenpy,range(N))
@@ -172,11 +259,11 @@ def full_prep(label_list,image_list,output_folder,nproc=150):
 
 
 if __name__=='__main__':
-    temp=open('new_json.json')
+    temp=open('/home/wyh21/AI_Lung_node/data_processing/new_json.json')
     bupt=json.load(temp)
     output_path='/data/wyh_data/processed_data'
-    label_list=bupt.keys()
-    image_list=bupt.values()
+    label_list=list(bupt.keys())
+    image_list=list(bupt.values())
     full_prep(label_list,image_list,output_path)
 
     print('All dataset maked down')

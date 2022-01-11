@@ -228,13 +228,22 @@ def two_lung_only(bw, spacing, max_iter=22, max_ratio=4.8):
 
     return bw1, bw2, bw
 
+
+def get_pixels_hu_from_nii(nii_path):
+    nii=sitk.ReadImage(nii_path)
+    nii_img=sitk.GetArrayFromImage(nii)
+    return np.array(nii_img, dtype=np.int16), np.array([nii.GetSpacing()[2],nii.GetSpacing()[0],nii.GetSpacing()[1]],dtype=np.float32)
+
+
+
 def step1_python(file):
     if len(file)>1:
         case = load_scan(file)
+        case_pixels, spacing = get_pixels_hu(case)
     else:
         case=sitk.ReadImage(file)
+        case_pixels, spacing = get_pixels_hu(case)
 
-    case_pixels, spacing = get_pixels_hu(case)
     bw = binarize_per_slice(case_pixels, spacing)
     flag = 0
     cut_num = 0
