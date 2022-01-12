@@ -213,23 +213,16 @@ def make_dataset(id,label_list=[],image_list=[],prep_folder=''):
         # todo 3D展示结节
         # todo 存储结节（存储为.nii)
         #print('first saved')
-        np.save(path/ f"nodule_{i}.nii", cropped_nodule)
+        np.save(path/ f"nodule_{i}.npy", cropped_nodule)
 
-        np.save(path/f"context_nodule_{i}.nii", cropped_context_nodule)
-    np.save(path/f"detection.npy",detection_points)
+        np.save(path/f"context_nodule_{i}.npy", cropped_context_nodule)
+    np.save(path/f"detection.npy",detection_points)#目标检测标签
 
 
     '''
     接下来是切出cube和带边缘信息的cube，EGFR分类任务的标签，我直接做切分以后的
 
     '''
-
-
-
-
-
-    #接下来是目标检测的标签
-
 
 
 

@@ -259,10 +259,7 @@ def step1_python(file):
     return case_pixels, bw1, bw2, spacing
     
 if __name__ == '__main__':
-    # INPUT_FOLDER = '/work/DataBowl3/stage1/stage1/'
-    # patients = os.listdir(INPUT_FOLDER)
-    # patients.sort()
-    # case_pixels, m1, m2, spacing = step1_python(os.path.join(INPUT_FOLDER,patients[25]))
+
     file_path='/home/wyh21/AI_Lung_node/data_processing/new_json.json'
     with open(file_path,'r') as load_f:
         load_dict = json.load(load_f)
